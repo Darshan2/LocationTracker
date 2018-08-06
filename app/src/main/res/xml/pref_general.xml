@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <SwitchPreference
+        android:title="@string/pref_tracking_lable"
+        android:key="@string/pref_tracking_key"
+        android:defaultValue="@string/pref_tracking_default"
+        android:summaryOn="@string/pref_tracking_on"
+        android:summaryOff="@string/pref_tracking_off"/>
+</PreferenceScreen>

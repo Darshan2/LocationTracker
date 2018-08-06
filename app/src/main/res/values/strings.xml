@@ -1,0 +1,26 @@
+<resources>
+    <string name="app_name">LocationTracker</string>
+    <string name="title_activity_maps">Map</string>
+
+    <string name="intent_tracking" translatable="false">is_tracking</string>
+
+    <string name="geofence_request_id" translatable="false">geofence_request_id</string>
+
+    <string name="shared_pref_name" translatable="false">LoginInfo</string>
+    <string name="shared_pref_key_user_name" translatable="false">Username</string>
+    <string name="shared_pref_key_user_password" translatable="false">Password</string>
+
+    <string name="pref_tracking_lable">Track Location</string>
+    <string name="pref_tracking_key" translatable="false">track_lacation</string>
+    <string name="pref_tracking_on">Tracking ON</string>
+    <string name="pref_tracking_off">Tracking OFF</string>
+    <string name="pref_tracking_default" translatable="false">true</string>
+
+    <string name="settings_label">Settings</string>
+    <string name="log_in">Log In</string>
+    <string name="start_tracking">Start tracking</string>
+    <string name="log_out">Log Out</string>
+    <string name="notification_title">LocationTracker</string>
+    <string name="notification_message">Lcation tracking: ON</string>
+    <string name="intent_start_foreground">intent_start_foreground</string>
+</resources>
