@@ -1,5 +1,13 @@
 # LocationTracker
 
+<p float="left">
+  <img src="screen_shots/screenshot_one.png" width="160"/>
+  <img src="screen_shots/screenshot_two.png" width="160" />
+  <img src="screen_shots/screenshot_three.png" width="160" />
+  <img src="screen_shots/screenshot_four.png" width="160" />
+  <img src="screen_shots/screenshot_five.png" width="160" /> 
+</p>
+
 ## Included features
 <ol>
 <li> User login​ and signup​ feature(user-name,mobile,password) and save the details in local database.
