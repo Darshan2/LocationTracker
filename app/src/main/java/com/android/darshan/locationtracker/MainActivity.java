@@ -14,16 +14,9 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 
-import com.android.darshan.locationtracker.Utils.Consts;
-import com.android.darshan.locationtracker.Utils.DbHelper;
-import com.android.darshan.locationtracker.models.Location;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
-import com.google.android.gms.location.Geofence;
-import com.google.android.gms.location.GeofencingClient;
-import com.google.android.gms.location.LocationServices;
 
-import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -112,7 +105,7 @@ public class MainActivity extends AppCompatActivity {
             Dialog dialog = googleApiAvailability.getErrorDialog(this, available, ERROR_DIALOG_REQUEST);
             dialog.show();
         } else {
-            //I can not do anything. User can not make Maps request.
+            //I can not do anything. UserEntry can not make Maps request.
             Log.d(TAG, "isDeviceHaveServices: Device does not have required services, and it can not be resolved");
             Toast.makeText(this, "You can't make maps request", Toast.LENGTH_SHORT).show();
         }

@@ -11,7 +11,6 @@ import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.NotificationManagerCompat;
 import android.util.Log;
-import android.widget.Toast;
 
 import com.android.darshan.locationtracker.Utils.Consts;
 
@@ -20,11 +19,10 @@ public class LocationMonitorService extends Service {
 
     // This is the Notification Channel ID.
     public static final String NOTIFICATION_CHANNEL_ID = "channel_id";
-    //User visible Channel Name
+    //UserEntry visible Channel Name
     public static final String CHANNEL_NAME = "Notification Channel";
     public static final int NOTIFICATION_ID = 1000;
-    
-    private boolean runningForeground = false;
+
 
     @Override
     public IBinder onBind(Intent intent) {
@@ -35,13 +33,13 @@ public class LocationMonitorService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         Log.d(TAG, "onStartCommand: ");
         if (intent.getAction().equals(Consts.STARTFOREGROUND_ACTION)) {
-            Log.i(TAG, "onStartCommand: " + "service stared");
+            Log.d(TAG, "onStartCommand: Starting foreground service");
 
             showMediaNotification();
             return START_STICKY;
 
         } else if (intent.getAction().equals(Consts.STOPFOREGROUND_ACTION)) {
-            Log.i(TAG, "Received Stop Foreground Intent");
+            Log.i(TAG, "Stopping foreground service");
             stopForeground(true);
             stopSelf();
             return START_NOT_STICKY;
@@ -76,7 +74,6 @@ public class LocationMonitorService extends Service {
         notificationManagerCompat.notify(NOTIFICATION_ID, customNotification);
 
         startForeground(NOTIFICATION_ID, customNotification);
-//        runningForeground = true;
     }
 
 
@@ -98,7 +95,9 @@ public class LocationMonitorService extends Service {
 
             //finally create notification channel
             NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
-            notificationManager.createNotificationChannel(notificationChannel);
+            if (notificationManager != null) {
+                notificationManager.createNotificationChannel(notificationChannel);
+            }
         }
     }
 }

@@ -1,6 +1,9 @@
 package com.android.darshan.locationtracker;
 
 import android.Manifest;
+import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProviders;
 import android.content.Intent;
 import android.content.IntentSender;
 import android.content.SharedPreferences;
@@ -11,24 +14,16 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
-import android.support.v7.preference.PreferenceManager;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuInflater;
-import android.view.MenuItem;
 import android.widget.Toast;
 
 import com.android.darshan.locationtracker.Utils.Consts;
-import com.android.darshan.locationtracker.Utils.DbHelper;
-import com.android.darshan.locationtracker.models.User;
-import com.google.android.gms.common.api.GoogleApiClient;
+import com.android.darshan.locationtracker.database.UserEntry;
+import com.android.darshan.locationtracker.database.UserRepository;
+import com.android.darshan.locationtracker.view_models.MapsViewModel;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.Geofence;
-import com.google.android.gms.location.GeofencingClient;
-import com.google.android.gms.location.GeofencingRequest;
 import com.google.android.gms.location.LocationCallback;
-import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationResult;
 import com.google.android.gms.location.LocationServices;
@@ -40,14 +35,10 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 
-import java.util.ArrayList;
-import java.util.prefs.PreferenceChangeListener;
 
 /*
     If user exist from this activity by pressing home button. App will start the foreground
@@ -56,7 +47,7 @@ import java.util.prefs.PreferenceChangeListener;
 
     App is made to update location in background, only if MapActivity is not destroyed.
 
-    User can stop the periodic Location updates. Either by pressing back button when MapActivity is
+    UserEntry can stop the periodic Location updates. Either by pressing back button when MapActivity is
     in foreground or by closing the app in Overview list
  */
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
@@ -75,10 +66,11 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private LatLng mCurrentLatLng;
     private boolean isTrackingOn = true;
     private boolean isForeground = true;
+    private boolean isServiceRunning;
     private String mUserName = "";
 
-    private GeofencingClient mGeofencingClient;
-
+    private  UserEntry mUser;
+    private UserRepository mUserRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -89,6 +81,10 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         getPermissions();
 
         getLogInInfo();
+
+        initViewModel();
+
+        mUserRepository = new UserRepository(getApplication());
 
         Intent intent = getIntent();
         if(intent != null && intent.hasExtra(getString(R.string.intent_tracking))) {
@@ -121,7 +117,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     }
 
 
-
     private void getLogInInfo() {
         SharedPreferences loginSharedPreferences =
                 getSharedPreferences(getString(R.string.shared_pref_name), MODE_PRIVATE);
@@ -129,54 +124,40 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if(loginSharedPreferences.contains(getString(R.string.shared_pref_key_user_name))) {
             String userName = loginSharedPreferences.getString(getString(R.string.shared_pref_key_user_name), "");
             if (!userName.equals("")) {
+                Log.d(TAG, "getLogInInfo: " + userName);
                 mUserName = userName;
             }
         }
     }
 
-    private void loadLocationFromDB() {
-        Toast errorToast = Toast.makeText(this, "Unknown last location", Toast.LENGTH_SHORT);
 
-        if (!mUserName.equals("")) {
-            DbHelper dbHelper = new DbHelper(this);
-            ArrayList<User> userArrayList = dbHelper.getAllUsersWithUserName(mUserName);
-            User user = userArrayList.get(0);
-//            Log.d(TAG, "loadLocationFromDB: " + user);
+    private void initViewModel() {
+        if(!mUserName.equals("")) {
+            MapsViewModel.Factory factory = new MapsViewModel.Factory(getApplication(), mUserName);
+            MapsViewModel mapsViewModel = ViewModelProviders.of(this, factory).get(MapsViewModel.class);
 
-            com.android.darshan.locationtracker.models.Location lastKnownLocation = user.getLastLocation();
-
-            try {
-                double latitude = Double.valueOf(lastKnownLocation.getLatitude());
-                double longitude = Double.valueOf(lastKnownLocation.getLongitude());
-                LatLng latLng = new LatLng(latitude, longitude);
-                moveCamera(latLng);
-
-            } catch (NumberFormatException e) {
-                e.printStackTrace();
-                errorToast.show();
-            }
+            LiveData<UserEntry> userEntryLiveData = mapsViewModel.getUserWithName();
+            userEntryLiveData.observe(this, new Observer<UserEntry>() {
+                @Override
+                public void onChanged(@Nullable UserEntry userEntry) {
+                    mUser = userEntry;
+                    if(!isTrackingOn) {
+                        loadLocationFromDB(userEntry);
+                    }
+                }
+            });
         }
     }
 
 
     private void moveCamera(LatLng latLng) {
         if(isForeground) {
-            Log.d(TAG, "moveCamera: ");
             mCurrentLatLng = latLng;
             mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, DEFAULT_ZOOM));
         }
 
     }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
-        isForeground = true;
-        if(isTrackingOn) {
-            startLocationUpdates();
-        }
-
-    }
 
     private void startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
@@ -199,8 +180,6 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-
-        Toast.makeText(this, "Map is ready", Toast.LENGTH_SHORT).show();
     }
 
 
@@ -216,11 +195,26 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         if(!isTrackingOn) {
             //to get rid of default gps button
             mMap.getUiSettings().setMyLocationButtonEnabled(false);
-            loadLocationFromDB();
         }
 
         mMap.setMyLocationEnabled(true);
 
+    }
+
+
+    private void loadLocationFromDB(UserEntry user) {
+        Log.d(TAG, "loadLocationFromDB: " );
+
+        try {
+            double latitude = Double.valueOf(user.getLatitude());
+            double longitude = Double.valueOf(user.getLongitude());
+            LatLng latLng = new LatLng(latitude, longitude);
+            moveCamera(latLng);
+
+        } catch (NumberFormatException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Unknown last location", Toast.LENGTH_SHORT).show();
+        }
     }
 
 
@@ -300,13 +294,29 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
 
     @Override
+    protected void onResume() {
+        super.onResume();
+
+        isForeground = true;
+        if(isTrackingOn) {
+            //Stop the LocationMonitor service if it is running
+            if(isServiceRunning) {
+                stopForegroundService();
+            }
+            startLocationUpdates();
+        }
+
+    }
+
+    @Override
     protected void onStop() {
         Log.d(TAG, "onStop: ");
         super.onStop();
-        
+
         if(isTrackingOn) {
             //start fore ground service
             Log.d(TAG, "onStop: Start service");
+            isServiceRunning = true;
             isForeground = false;
             Intent intent = new Intent(this, LocationMonitorService.class);
             intent.setAction(Consts.STARTFOREGROUND_ACTION);
@@ -322,20 +332,17 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
 
         if(isTrackingOn) {
             if(mCurrentLatLng != null) {
-                DbHelper dbHelper = new DbHelper(this);
                 double latitude = mCurrentLatLng.latitude;
                 double longitude = mCurrentLatLng.longitude;
 
                 String latitudeStr = String.valueOf(latitude);
                 String longitudeStr = String.valueOf(longitude);
 
-                com.android.darshan.locationtracker.models.Location newLocation =
-                        new com.android.darshan.locationtracker.models.Location(latitudeStr, longitudeStr);
+                mUser.setLatitude(latitudeStr);
+                mUser.setLongitude(longitudeStr);
 
-                int count = dbHelper.updateLastLocation(newLocation, mUserName);
-                if (count == 0) {
-                    Toast.makeText(this, "New location update failed", Toast.LENGTH_SHORT).show();
-                }
+                mUserRepository.updateUser(mUser);
+
             }
 
             stopLocationUpdates();
@@ -348,6 +355,12 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         Log.d(TAG, "stopLocationUpdates: ");
         mFusedLocationClient.removeLocationUpdates(mLocationCallback);
 
+        stopForegroundService();
+    }
+
+    private void stopForegroundService() {
+        Log.d(TAG, "stopForegroundService: ");
+        isServiceRunning = false;
         Intent intent = new Intent(this, LocationMonitorService.class);
         intent.setAction(Consts.STOPFOREGROUND_ACTION);
         intent.putExtra(getString(R.string.intent_start_foreground), false);
