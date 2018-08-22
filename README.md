@@ -22,5 +22,6 @@ Used shared preferences to maintain a login session</li>
 <li>When user closes the Map(either by pressing back, or by closing app in Overview list),
     last device location is stored in SQLite database.</li>
 <li>On turning off the Settings option called Track location, plotted the location data from db on map</li>
-<li>Used MVC architecture</li>
+<li>Uses Android architecture components such as ROOM, LiveData and ViewModel</li>
+<li>Uses MVVM architecture</li>
 </ol>
