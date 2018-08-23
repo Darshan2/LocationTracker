@@ -24,4 +24,5 @@ Used shared preferences to maintain a login session</li>
 <li>On turning off the Settings option called Track location, plotted the location data from db on map</li>
 <li>Uses Android architecture components such as ROOM, LiveData and ViewModel</li>
 <li>Uses MVVM architecture</li>
+<li>Dagger2 is used for Dependency injection</li> 
 </ol>
