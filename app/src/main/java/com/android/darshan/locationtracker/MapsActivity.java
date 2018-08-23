@@ -20,6 +20,7 @@ import android.widget.Toast;
 import com.android.darshan.locationtracker.Utils.Consts;
 import com.android.darshan.locationtracker.database.UserEntry;
 import com.android.darshan.locationtracker.database.UserRepository;
+import com.android.darshan.locationtracker.di.MyApp;
 import com.android.darshan.locationtracker.view_models.MapsViewModel;
 import com.google.android.gms.common.api.ResolvableApiException;
 import com.google.android.gms.location.FusedLocationProviderClient;
@@ -38,6 +39,8 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+
+import javax.inject.Inject;
 
 
 /*
@@ -58,6 +61,8 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private static final int REQUEST_CHECK_SETTINGS = 100;
     private static final float DEFAULT_ZOOM = 18f;
 
+    @Inject UserRepository mUserRepository;
+
     private FusedLocationProviderClient mFusedLocationClient;
 
     private GoogleMap mMap;
@@ -70,7 +75,7 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     private String mUserName = "";
 
     private  UserEntry mUser;
-    private UserRepository mUserRepository;
+//    private UserRepository mUserRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,13 +83,16 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
         setContentView(R.layout.activity_maps);
         Log.d(TAG, "onCreate: ");
 
+        //Dependency injection
+        ((MyApp)getApplication()).getAppComponent().inject(this);
+
         getPermissions();
 
         getLogInInfo();
 
         initViewModel();
 
-        mUserRepository = new UserRepository(getApplication());
+//        mUserRepository = new UserRepository(getApplication());
 
         Intent intent = getIntent();
         if(intent != null && intent.hasExtra(getString(R.string.intent_tracking))) {

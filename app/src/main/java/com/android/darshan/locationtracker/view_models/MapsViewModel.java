@@ -10,18 +10,26 @@ import android.util.Log;
 
 import com.android.darshan.locationtracker.database.UserEntry;
 import com.android.darshan.locationtracker.database.UserRepository;
+import com.android.darshan.locationtracker.di.MyApp;
+
+import javax.inject.Inject;
 
 
 public class MapsViewModel extends AndroidViewModel {
     private static final String TAG = "MapsViewModel";
+
+    @Inject UserRepository userRepository;
+
     private LiveData<UserEntry> mUserWithName;
 
     public MapsViewModel(@NonNull Application application, String userName) {
         super(application);
         Log.d(TAG, "MapsViewModel: created ");
 
-        //Tight coupling, Use dependency injection(using Dagger2) to inject this object later.
-        UserRepository userRepository = new UserRepository(application);
+//        //Tight coupling, Use dependency injection(using Dagger2) to inject this object later.
+//        UserRepository userRepository = new UserRepository(application);
+        ((MyApp)application).getAppComponent().inject(this);
+
         mUserWithName = userRepository.loadUsersWithUserName(userName);
     }
 

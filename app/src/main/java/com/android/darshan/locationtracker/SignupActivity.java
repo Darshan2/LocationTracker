@@ -14,9 +14,12 @@ import android.widget.Toast;
 
 import com.android.darshan.locationtracker.database.UserEntry;
 import com.android.darshan.locationtracker.database.UserRepository;
+import com.android.darshan.locationtracker.di.MyApp;
 import com.android.darshan.locationtracker.view_models.SignupViewModel;
 
 import java.util.List;
+
+import javax.inject.Inject;
 
 /*
     When checking for existing user(based on their user name), we assume that querying the Db will require more time than
@@ -32,7 +35,7 @@ public class SignupActivity extends AppCompatActivity {
     private EditText etUserName, etPhoneNumber, etPassword;
     private Button btnSignup;
 
-    private UserRepository mUserRepository;
+    @Inject UserRepository mUserRepository;
     private List<UserEntry> mAllUsers;
 
     @Override
@@ -40,7 +43,10 @@ public class SignupActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_signup);
 
-        mUserRepository = new UserRepository(getApplication());
+        //Dependency injection
+        ((MyApp)getApplication()).getAppComponent().inject(this);
+
+//        mUserRepository = new UserRepository(getApplication());
 
         etUserName = findViewById(R.id.et_userName);
         etPhoneNumber = findViewById(R.id.et_phoneNumber);

@@ -7,13 +7,16 @@ import android.util.Log;
 
 import java.util.List;
 
+import javax.inject.Inject;
+
 
 public class UserRepository {
     private static final String TAG = "UserRepository";
     private UserDao mUserDao;
 
-    public UserRepository(Application application) {
-        mUserDao = AppDatabase.getInstance(application).userDao();
+    @Inject
+    public UserRepository(AppDatabase appDatabase) {
+        mUserDao = appDatabase.userDao();
     }
 
 
